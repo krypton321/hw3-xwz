@@ -1,8 +1,13 @@
 package edu.cmu.lti.f14.hw3.hw3_xuweiz.casconsumers;
 
+import java.io.BufferedWriter;
+import java.io.FileNotFoundException;
+import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
+import java.util.Collections;
+import java.util.Formatter;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.List;
@@ -20,26 +25,33 @@ import org.apache.uima.resource.ResourceProcessException;
 import org.apache.uima.util.ProcessTrace;
 
 import edu.cmu.lti.f14.hw3.hw3_xuweiz.Doctype;
+import edu.cmu.lti.f14.hw3.hw3_xuweiz.DoctypeComparator;
 import edu.cmu.lti.f14.hw3.hw3_xuweiz.typesystems.Document;
 import edu.cmu.lti.f14.hw3.hw3_xuweiz.typesystems.Token;
 import edu.cmu.lti.f14.hw3.hw3_xuweiz.utils.Utils;
 
 public class RetrievalEvaluator extends CasConsumer_ImplBase {
 
-  /** query id number **/
+
   // public ArrayList<Integer> qIdList;
 
-  /** query and text relevant values **/
-  // public ArrayList<Integer> relList;
 
+  // public ArrayList<Integer> relList;
+  /** document information map **/
   public static HashMap<Integer, List<Doctype>> docMap;
 
+  /** question information list **/
   public static List<Doctype> questionList;
 
   public static int qnum = 0;
 
+  /** Relevant document rank list**/
   public static List<Integer> mrrList;
-
+  
+  public String reportdir ="report.txt";
+/**
+ * Initialize report directory and static parameter in this method.
+ */
   public void initialize() throws ResourceInitializationException {
 
     // qIdList = new ArrayList<Integer>();
@@ -51,10 +63,27 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
     questionList = new ArrayList<Doctype>();
 
     mrrList = new ArrayList<Integer>();
+
+    PrintWriter writer = null;
+    try {
+      writer = new PrintWriter(reportdir);
+      writer.print("");
+    } catch (FileNotFoundException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    } finally {
+      try {
+        writer.close();
+      } catch (Exception ex) {
+      }
+    }
   }
 
   /**
-   * TODO :: 1. construct the global word dictionary 2. keep the word frequency for each sentence
+   * TODO :: 1. construct the global document dictionary 
+   *                 2. construct the global question list 
+   * @param aJCas
+   *          store queries vectors
    */
   @Override
   public void processCas(CAS aCas) throws ResourceProcessException {
@@ -108,7 +137,10 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
   }
 
   /**
-   * TODO 1. Compute Cosine Similarity and rank the retrieved sentences 2. Compute the MRR metric
+   * TODO 1. Compute Cosine Similarity and rank the retrieved sentences 
+   *              2. Compute the MRR metric
+   *              3. Output the result.
+   * @param arg0
    */
   @Override
   public void collectionProcessComplete(ProcessTrace arg0) throws ResourceProcessException,
@@ -125,49 +157,55 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
       Map<String, Integer> qmap = qdt.gettList();
       if (docMap.containsKey(qdt.getqid())) {
         List<Doctype> dtList = docMap.get(qdt.getqid());
-        double[] cosSim = new double[dtList.size()];
         for (int j = 0; j < dtList.size(); j++) {
           Doctype ddt = dtList.get(j);
           Map<String, Integer> dmap = ddt.gettList();
           double csim = computeCosineSimilarity(qmap, dmap);
-          cosSim[j] = csim;
           ddt.setcossim(csim);
-          if (ddt.getrel() == 1) {
-            outputList.add(ddt);
-          }
-//          System.out.println("cosine=" + ddt.getcossim() + " rank=" + ddt.getrank() + " qid="
-//                  + ddt.getqid() + " rel=" + ddt.getrel() + " " + ddt.getdoc());
         }
-        Arrays.sort(cosSim);
-        Doctype dt = outputList.get(i);
-        for (int k = 0; k < cosSim.length; k++) {
-          if (cosSim[k] == dt.getcossim()) {
-            dt.setrank(cosSim.length-k);
-            break;
+        DoctypeComparator dc = new DoctypeComparator();
+        dtList.sort(dc);
+        for (int k = 0; k < dtList.size(); k++) {
+          Doctype dt = dtList.get(k);
+          dt.setrank(k + 1);
+          if (dt.getrel() == 1) {
+            outputList.add(dt);
           }
+          Formatter formate = new Formatter();
+//          String reportline = "cosine=" + formate.format("%.4f", dt.getcossim()) + "  rank="
+//                  + dt.getrank() + "  qid=" + dt.getqid() + " rel=" + dt.getrel() + " " + dt.getdoc();
+//          System.out.println(reportline);
         }
-    //    System.out.println(cosSim);
+
       } else {
 
       }
-      // List<Doctype>
 
     }
+
     for (int i = 0; i < outputList.size(); i++) {
+      Formatter formate = new Formatter();
       Doctype dt = outputList.get(i);
-      System.out.println("cosine=" + dt.getcossim() + " rank=" + dt.getrank() + " qid="
-              + dt.getqid() + " rel=" + dt.getrel() + " " + dt.getdoc());
+      String reportline = "cosine=" + formate.format("%.4f", dt.getcossim()) + "  rank="
+              + dt.getrank() + "  qid=" + dt.getqid() + " rel=" + dt.getrel() + " " + dt.getdoc();
+      System.out.println(reportline);
+      print_report(reportline);
     }
 
     // TODO :: compute the rank of retrieved sentences
 
     // TODO :: compute the metric:: mean reciprocal rank
     double metric_mrr = compute_mrr(outputList);
-    System.out.println(" (MRR) Mean Reciprocal Rank ::" + metric_mrr);
+    Formatter formate = new Formatter();
+    String reportline = "(MRR) Mean Reciprocal Rank ::" + formate.format("%.4f",metric_mrr);
+    System.out.println(reportline);
+    print_report(reportline);
   }
 
   /**
-   * 
+   * Compute cosine_similarity
+   * @param queryVector
+   * @param docVector
    * @return cosine_similarity
    */
   private double computeCosineSimilarity(Map<String, Integer> queryVector,
@@ -211,19 +249,42 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
   }
 
   /**
-   * 
+   * Compute mrr
+   * @param outputList
    * @return mrr
    */
   private double compute_mrr(List<Doctype> outputList) {
     double metric_mrr = 0.0;
     int q = outputList.size();
-    for(int i = 0;i<q;i++){
-      metric_mrr += 1.0/outputList.get(i).getrank();
+    for (int i = 0; i < q; i++) {
+      metric_mrr += 1.0 / outputList.get(i).getrank();
     }
-    metric_mrr = metric_mrr/q;
+    metric_mrr = metric_mrr / q;
     // TODO :: compute Mean Reciprocal Rank (MRR) of the text collection
 
     return metric_mrr;
   }
 
+
+  private void print_report(String str) throws ResourceProcessException {
+    FileWriter writer = null;
+    BufferedWriter bw = null;
+    try {
+      writer = new FileWriter(reportdir, true);
+      bw = new BufferedWriter(writer);
+      bw.append(str + "\n");
+
+    } catch (IOException e) {
+      throw new ResourceProcessException(e);
+    } finally {
+      try {
+        bw.close();
+      } catch (Exception ex) {
+      }
+      try {
+        writer.close();
+      } catch (Exception ex) {
+      }
+    }
+  }
 }

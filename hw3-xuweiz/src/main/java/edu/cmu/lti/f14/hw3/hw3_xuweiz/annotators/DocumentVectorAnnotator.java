@@ -1,7 +1,12 @@
 package edu.cmu.lti.f14.hw3.hw3_xuweiz.annotators;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.URL;
 import java.util.*;
 
+import org.apache.uima.UimaContext;
 import org.apache.uima.analysis_component.JCasAnnotator_ImplBase;
 import org.apache.uima.analysis_engine.AnalysisEngineProcessException;
 import org.apache.uima.cas.ArrayFS;
@@ -13,16 +18,56 @@ import org.apache.uima.jcas.cas.IntegerArray;
 import org.apache.uima.jcas.cas.NonEmptyFSList;
 import org.apache.uima.jcas.cas.StringArray;
 import org.apache.uima.jcas.tcas.Annotation;
+import org.apache.uima.resource.ResourceInitializationException;
 
+import edu.cmu.lti.f14.hw3.hw3_xuweiz.VectorSpaceRetrieval;
 import edu.cmu.lti.f14.hw3.hw3_xuweiz.typesystems.Document;
 import edu.cmu.lti.f14.hw3.hw3_xuweiz.typesystems.Token;
 import edu.cmu.lti.f14.hw3.hw3_xuweiz.utils.StanfordLemmatizer;
 
+/**
+ * Description: Process documents into tokens
+ * 
+ * @author Xuwei Zou
+ *
+ */
 public class DocumentVectorAnnotator extends JCasAnnotator_ImplBase {
-
+  static private Map<String,Integer> stopwordsmap ;
+  
+  @Override
+  public void initialize(UimaContext aContext) throws ResourceInitializationException {
+    stopwordsmap = new HashMap<String,Integer>();
+    String sLine;
+    URL docUrl = VectorSpaceRetrieval.class.getResource("/stopwords.txt");
+    if (docUrl == null) {
+       throw new IllegalArgumentException("Error opening /stopwords.txt");
+    }
+    BufferedReader br = null;
+    try {
+      br = new BufferedReader(new InputStreamReader(docUrl.openStream()));
+      while ((sLine = br.readLine()) != null)   {
+        stopwordsmap.put(sLine, 1);
+      }
+    } catch (IOException e) {
+      // TODO Auto-generated catch block
+      e.printStackTrace();
+    }
+   finally{
+      try {
+        br.close();
+      } catch (IOException e) {
+        // TODO Auto-generated catch block
+        e.printStackTrace();
+      }
+   }
+   
+    br=null;
+      
+  }
+  
 	@Override
 	public void process(JCas jcas) throws AnalysisEngineProcessException {
-
+	  
 		FSIterator<Annotation> iter = jcas.getAnnotationIndex().iterator();
 		if (iter.isValid()) {
 			iter.moveToNext();
@@ -33,7 +78,7 @@ public class DocumentVectorAnnotator extends JCasAnnotator_ImplBase {
 	}
 
 	/**
-   * A basic white-space tokenizer, it deliberately does not split on punctuation!
+   * A basic white-space tokenizer.
    *
 	 * @param doc input text
 	 * @return    a list of tokens.
@@ -41,31 +86,32 @@ public class DocumentVectorAnnotator extends JCasAnnotator_ImplBase {
 
 	List<String> tokenize0(String doc) {
 	  List<String> res = new ArrayList<String>();
-	  
+//	  doc = doc.replace(",", " ");
+//	  doc = doc.replace(".", " ");
+//	  doc = doc.replace("!", " ");
+//	  doc = doc.replace(";", " ");
+//	  doc = doc.replace("?", " ");
+//	  doc = doc.replace("-", " ");
+//	  doc = doc.replace("'s", "");
+//    
+//	  doc=doc.toLowerCase();
+//	  doc = StanfordLemmatizer.stemText(doc);
+//   System.out.println(doc);
+
 	  for (String s: doc.split("\\s+"))
-	    res.add(s);
+	//    if(!stopwordsmap.containsKey(s))
+	      res.add(s);
 	  return res;
 	}
 
-	/**
-	 * 
-	 * @param jcas
-	 * @param doc
-	 */
+
 
 	private void createTermFreqVector(JCas jcas, Document doc) {
 
 		String docText = doc.getText();
 		Map<String,Integer> map = new HashMap<String,Integer>();
 		List<String> slist = new ArrayList<String>();
-		docText = docText.replace(",", "");
-		docText = docText.replace(".", "");
-		docText = docText.replace("!", "");
-		docText = docText.replace("?", "");
-		
-		docText = StanfordLemmatizer.stemText(docText);
 		slist = tokenize0(docText);
-	//	String[] lineString = docText.split(" ");
 		for(int i =0; i<slist.size();i++){
 		  String s = slist.get(i);
 		  if(map.containsKey(s)){
@@ -96,7 +142,7 @@ public class DocumentVectorAnnotator extends JCasAnnotator_ImplBase {
 		
 
 	}
-	public static FSList createFSList(JCas aJCas, Collection<Token> aCollection)
+	private static FSList createFSList(JCas aJCas, Collection<Token> aCollection)
 	   {
 	     if (aCollection.size() == 0) {
 	       return new EmptyFSList(aJCas);

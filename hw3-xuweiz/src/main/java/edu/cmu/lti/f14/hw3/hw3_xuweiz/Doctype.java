@@ -5,6 +5,12 @@ import java.util.Map;
 
 import edu.cmu.lti.f14.hw3.hw3_xuweiz.typesystems.Token;
 
+/**
+ * Description: Store document related information.
+ * 
+ * @author Xuwei Zou
+ *
+ */
 public class Doctype {
   private int rel;
   

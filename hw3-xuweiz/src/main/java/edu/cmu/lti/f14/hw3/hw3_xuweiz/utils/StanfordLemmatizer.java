@@ -76,7 +76,7 @@ public class StanfordLemmatizer {
    * Some stupid test.
    */
   public static void main(String args[]) {
-    String origText = "tested tester tested gone indices indices super_testers. , ! ?"
+    String origText = "Tested Tester Tested gone indices indices super_testers. , ! ?"
                     + "had having been was were would could might";
     
     System.out.println(stemText(origText));
