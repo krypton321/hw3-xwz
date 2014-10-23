@@ -176,6 +176,7 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
             outputList.add(relDoc);
           }
         }
+        
     //    DoctypeComparator dc = new DoctypeComparator();
   //      dtList.sort(dc);
 //        for (int k = 0; k < dtList.size(); k++) {
