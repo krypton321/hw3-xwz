@@ -164,6 +164,9 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
           Doctype ddt = dtList.get(j);
           Map<String, Integer> dmap = ddt.gettList();
           double csim = computeCosineSimilarity(qmap, dmap);
+      //    double csim =computeJaccardSimilarity(qmap, dmap);
+      //    double csim =computeTverskySimilarity(qmap, dmap);
+     //     computeTverskySimilarity
           ddt.setcossim(csim);
           cosArr[j]= csim;
           if(ddt.getrel() == 1)
@@ -258,6 +261,102 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
     }
 
     cosine_similarity = numerator / (Math.sqrt(denominator1) * Math.sqrt(denominator2));
+    return cosine_similarity;
+
+  }
+  
+  /**
+   * Compute jaccard_similarity
+   * @param queryVector
+   * @param docVector
+   * @return jaccard_similarity
+   */
+  private double computeJaccardSimilarity(Map<String, Integer> queryVector,
+          Map<String, Integer> docVector) {
+    double cosine_similarity = 0.0;
+
+    // TODO :: compute cosine similarity between two sentences
+    double numerator = 0.0, denominator = 0.0;
+    double temp1, temp2;
+    Map<String, Integer> qmap = new HashMap<String, Integer>(queryVector);
+    Map<String, Integer> dmap = new HashMap<String, Integer>(docVector);
+    if ((qmap.size() < 1) || (dmap.size() < 1)) {
+      return 0.0;
+    }
+    Set<String> qSet = qmap.keySet();
+    Iterator<String> qIt = qSet.iterator();
+    while (qIt.hasNext()) {
+      String key = qIt.next();
+      temp1 = qmap.get(key);
+      if (dmap.containsKey(key)) {
+        temp2 = dmap.get(key);
+      } else {
+        temp2 = 0;
+      }
+      dmap.remove(key);
+      numerator += Math.min(temp1, temp2);
+      denominator += Math.max(temp1 ,temp2);
+    }
+    Set<String> dSet = dmap.keySet();
+    Iterator<String> dIt = dSet.iterator();
+    while (dIt.hasNext()) {
+      String key = dIt.next();
+      temp2 = dmap.get(key);
+      denominator += temp2 ;
+    }
+
+    cosine_similarity = numerator /denominator;
+    return cosine_similarity;
+
+  }
+
+  /**
+   * Compute Tversky_similarity
+   * @param queryVector
+   * @param docVector
+   * @return Tversky_similarity
+   */
+  private double computeTverskySimilarity(Map<String, Integer> queryVector,
+          Map<String, Integer> docVector) {
+    double cosine_similarity = 0.0;
+
+    // TODO :: compute cosine similarity between two sentences
+    double numerator = 0.0, denominator1 = 0.0,denominator2 = 0.0;
+    double temp1, temp2;
+    double a=0.8,b=0.2;
+    Map<String, Integer> qmap = new HashMap<String, Integer>(queryVector);
+    Map<String, Integer> dmap = new HashMap<String, Integer>(docVector);
+    if ((qmap.size() < 1) || (dmap.size() < 1)) {
+      return 0.0;
+    }
+    Set<String> qSet = qmap.keySet();
+    Iterator<String> qIt = qSet.iterator();
+    while (qIt.hasNext()) {
+      String key = qIt.next();
+      temp1 = qmap.get(key);
+      if (dmap.containsKey(key)) {
+        temp2 = dmap.get(key);
+      } else {
+        temp2 = 0;
+      }
+      dmap.remove(key);
+      numerator += Math.min(temp1, temp2);
+      if(temp1>temp2){
+        denominator1 += Math.abs(temp1 -temp2);
+      }
+      else{
+        denominator2 += Math.abs(temp1 -temp2);
+      }
+    }
+    Set<String> dSet = dmap.keySet();
+    Iterator<String> dIt = dSet.iterator();
+    while (dIt.hasNext()) {
+      String key = dIt.next();
+      temp2 = dmap.get(key);
+      denominator2 += temp2 ;
+    }
+
+    cosine_similarity = numerator /(numerator+a*denominator1+b*denominator2);
     return cosine_similarity;
 
   }

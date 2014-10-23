@@ -34,36 +34,36 @@ import edu.cmu.lti.f14.hw3.hw3_xuweiz.utils.StanfordLemmatizer;
 public class DocumentVectorAnnotator extends JCasAnnotator_ImplBase {
   static private Map<String,Integer> stopwordsmap ;
   
-  @Override
-  public void initialize(UimaContext aContext) throws ResourceInitializationException {
-    stopwordsmap = new HashMap<String,Integer>();
-    String sLine;
-    URL docUrl = VectorSpaceRetrieval.class.getResource("/stopwords.txt");
-    if (docUrl == null) {
-       throw new IllegalArgumentException("Error opening /stopwords.txt");
-    }
-    BufferedReader br = null;
-    try {
-      br = new BufferedReader(new InputStreamReader(docUrl.openStream()));
-      while ((sLine = br.readLine()) != null)   {
-        stopwordsmap.put(sLine, 1);
-      }
-    } catch (IOException e) {
-      // TODO Auto-generated catch block
-      e.printStackTrace();
-    }
-   finally{
-      try {
-        br.close();
-      } catch (IOException e) {
-        // TODO Auto-generated catch block
-        e.printStackTrace();
-      }
-   }
-   
-    br=null;
-      
-  }
+//  @Override
+//  public void initialize(UimaContext aContext) throws ResourceInitializationException {
+//    stopwordsmap = new HashMap<String,Integer>();
+//    String sLine;
+//    URL docUrl = VectorSpaceRetrieval.class.getResource("/stopwords.txt");
+//    if (docUrl == null) {
+//       throw new IllegalArgumentException("Error opening /stopwords.txt");
+//    }
+//    BufferedReader br = null;
+//    try {
+//      br = new BufferedReader(new InputStreamReader(docUrl.openStream()));
+//      while ((sLine = br.readLine()) != null)   {
+//        stopwordsmap.put(sLine, 1);
+//      }
+//    } catch (IOException e) {
+//      // TODO Auto-generated catch block
+//      e.printStackTrace();
+//    }
+//   finally{
+//      try {
+//        br.close();
+//      } catch (IOException e) {
+//        // TODO Auto-generated catch block
+//        e.printStackTrace();
+//      }
+//   }
+//   
+//    br=null;
+//      
+//  }
   
 	@Override
 	public void process(JCas jcas) throws AnalysisEngineProcessException {
@@ -96,7 +96,7 @@ public class DocumentVectorAnnotator extends JCasAnnotator_ImplBase {
 //    
 //	  doc=doc.toLowerCase();
 //	  doc = StanfordLemmatizer.stemText(doc);
-//   System.out.println(doc);
+ //  System.out.println(doc);
 
 	  for (String s: doc.split("\\s+"))
 	//    if(!stopwordsmap.containsKey(s))
