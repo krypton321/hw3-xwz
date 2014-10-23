@@ -6,6 +6,7 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.Formatter;
 import java.util.HashMap;
@@ -157,29 +158,41 @@ public class RetrievalEvaluator extends CasConsumer_ImplBase {
       Map<String, Integer> qmap = qdt.gettList();
       if (docMap.containsKey(qdt.getqid())) {
         List<Doctype> dtList = docMap.get(qdt.getqid());
+        double[] cosArr = new double[dtList.size()];
+        Doctype relDoc = null;
         for (int j = 0; j < dtList.size(); j++) {
           Doctype ddt = dtList.get(j);
           Map<String, Integer> dmap = ddt.gettList();
           double csim = computeCosineSimilarity(qmap, dmap);
           ddt.setcossim(csim);
+          cosArr[j]= csim;
+          if(ddt.getrel() == 1)
+            relDoc =ddt;
         }
-        DoctypeComparator dc = new DoctypeComparator();
-        dtList.sort(dc);
-        for (int k = 0; k < dtList.size(); k++) {
-          Doctype dt = dtList.get(k);
-          dt.setrank(k + 1);
-          if (dt.getrel() == 1) {
-            outputList.add(dt);
+        Arrays.sort(cosArr);
+        for(int k=0;k<cosArr.length;k++){
+          if(cosArr[k] == relDoc.getcossim()){
+            relDoc.setrank(cosArr.length-k);
+            outputList.add(relDoc);
           }
-          Formatter formate = new Formatter();
+        }
+    //    DoctypeComparator dc = new DoctypeComparator();
+  //      dtList.sort(dc);
+//        for (int k = 0; k < dtList.size(); k++) {
+//          Doctype dt = dtList.get(k);
+//          dt.setrank(k + 1);
+//          if (dt.getrel() == 1) {
+//            outputList.add(dt);
+//          }
+//          Formatter formate = new Formatter();
 //          String reportline = "cosine=" + formate.format("%.4f", dt.getcossim()) + "  rank="
 //                  + dt.getrank() + "  qid=" + dt.getqid() + " rel=" + dt.getrel() + " " + dt.getdoc();
 //          System.out.println(reportline);
         }
 
-      } else {
-
-      }
+//      } else {
+//
+//      }
 
     }
 
